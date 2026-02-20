@@ -112,7 +112,7 @@ export function TreeNode({
       <div className="node-gender-indicator" />
       <div className="node-name">{person.name}</div>
       <div className="node-sub-label">{displayLabel}</div>
-      {person.isDeceased && <div className="node-deceased-badge">Deceased</div>}
+      {person.isDeceased && <div className="node-deceased-badge">Đã mất</div>}
     </div>
   );
 }

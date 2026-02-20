@@ -62,7 +62,7 @@ export function PersonForm({ person, mode, onSubmit, onClose }: PersonFormProps)
     });
   }
 
-  const title = mode === "edit" ? "Edit Person" : "Person Details";
+  const title = mode === "edit" ? "Chỉnh sửa thông tin" : "Chi tiết";
 
   return (
     <div className="family-tree-dialog-overlay" onClick={onClose}>
@@ -88,28 +88,28 @@ export function PersonForm({ person, mode, onSubmit, onClose }: PersonFormProps)
           </div>
 
           <div className="family-tree-dialog-field">
-            <label>Gender <span className="field-required">*</span></label>
+            <label>Giới tính <span className="field-required">*</span></label>
             <div className="family-tree-dialog-gender">
               <button
                 type="button"
                 className={`gender-btn male ${gender === "male" ? "active" : ""}`}
                 onClick={() => setGender("male")}
               >
-                Male
+                Nam
               </button>
               <button
                 type="button"
                 className={`gender-btn female ${gender === "female" ? "active" : ""}`}
                 onClick={() => setGender("female")}
               >
-                Female
+                Nữ
               </button>
             </div>
           </div>
 
           <div className="person-form-row">
             <div className="family-tree-dialog-field">
-              <label htmlFor="pf-birthyear">Birth Year</label>
+              <label htmlFor="pf-birthyear">Năm sinh</label>
               <input
                 id="pf-birthyear"
                 type="number"
@@ -121,7 +121,7 @@ export function PersonForm({ person, mode, onSubmit, onClose }: PersonFormProps)
             </div>
 
             <div className="family-tree-dialog-field">
-              <label htmlFor="pf-nickname">Nickname</label>
+              <label htmlFor="pf-nickname">Biệt danh</label>
               <input
                 id="pf-nickname"
                 type="text"
@@ -134,7 +134,7 @@ export function PersonForm({ person, mode, onSubmit, onClose }: PersonFormProps)
           </div>
 
           <div className="family-tree-dialog-field">
-            <label htmlFor="pf-phone">Phone</label>
+            <label htmlFor="pf-phone">Điện thoại</label>
             <input
               id="pf-phone"
               type="text"
@@ -146,7 +146,7 @@ export function PersonForm({ person, mode, onSubmit, onClose }: PersonFormProps)
           </div>
 
           <div className="family-tree-dialog-field">
-            <label htmlFor="pf-address">Address</label>
+            <label htmlFor="pf-address">Địa chỉ</label>
             <input
               id="pf-address"
               type="text"
@@ -158,22 +158,22 @@ export function PersonForm({ person, mode, onSubmit, onClose }: PersonFormProps)
           </div>
 
           <div className="family-tree-dialog-field person-form-checkbox-field">
-            <label className="person-form-checkbox-label">
+            <label className="person-form-checkbox-label flex">
               <input
                 type="checkbox"
                 checked={isDeceased}
                 onChange={(e) => setIsDeceased(e.target.checked)}
               />
-              <span>Deceased</span>
+              <span>Đã mất</span>
             </label>
           </div>
 
           <div className="family-tree-dialog-actions">
             <button type="button" className="btn-cancel" onClick={onClose}>
-              Cancel
+              Hủy
             </button>
             <button type="submit" className="btn-confirm">
-              {mode === "edit" ? "Save" : "Save"}
+              Lưu
             </button>
           </div>
         </form>

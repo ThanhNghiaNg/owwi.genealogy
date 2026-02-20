@@ -84,15 +84,15 @@ export function FamilyTreeApp() {
         <div className="header-actions">
           {!isEmpty && (
             <>
-              <button
+              {/* <button
                 className="header-btn"
                 onClick={() => setShowInitDialog(true)}
               >
                 Add Root
-              </button>
-              <button className="header-btn danger" onClick={handleClearTree}>
+              </button> */}
+              {/* <button className="header-btn danger" onClick={handleClearTree}>
                 Clear All
-              </button>
+              </button> */}
             </>
           )}
         </div>

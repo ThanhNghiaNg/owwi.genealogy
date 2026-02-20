@@ -95,7 +95,7 @@ export function TreeCanvas({ db, ui, dispatch }: TreeCanvasProps) {
 
     const items: ContextMenuItem[] = [
       {
-        label: "Edit",
+        label: "Chỉnh sửa",
         onClick: () =>
           dispatch({
             type: "OPEN_PERSON_FORM",
@@ -104,25 +104,20 @@ export function TreeCanvas({ db, ui, dispatch }: TreeCanvasProps) {
           }),
       },
       {
-        label: "Add Child",
+        label: "Thêm con",
         onClick: () => setDialogMode({ type: "add-child", parentId: personId }),
       },
       {
-        label: "Add Spouse",
+        label: "Thêm vợ/chồng",
         onClick: () =>
           setDialogMode({ type: "add-spouse", personId: personId }),
         disabled: personHasSpouse,
-      },
-      {
-        label: "Add Parent",
-        onClick: () =>
-          setDialogMode({ type: "add-parent", childId: personId }),
       },
     ];
 
     if (parentIds.length > 0) {
       items.push({
-        label: "Move Left",
+        label: "Di chuyển sang trái",
         onClick: () =>
           dispatch({
             type: "MOVE_CHILD_LEFT",
@@ -131,7 +126,7 @@ export function TreeCanvas({ db, ui, dispatch }: TreeCanvasProps) {
           }),
       });
       items.push({
-        label: "Move Right",
+        label: "Di chuyển sang phải",
         onClick: () =>
           dispatch({
             type: "MOVE_CHILD_RIGHT",
@@ -139,10 +134,16 @@ export function TreeCanvas({ db, ui, dispatch }: TreeCanvasProps) {
             childId: personId,
           }),
       });
+    } else {
+      items.push( {
+        label: "Thêm cha/mẹ",
+        onClick: () =>
+          setDialogMode({ type: "add-parent", childId: personId }),
+      })
     }
 
     items.push({
-      label: "Delete",
+      label: "Xóa",
       onClick: () => dispatch({ type: "DELETE_PERSON", personId }),
       danger: true,
     });
