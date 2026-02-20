@@ -297,17 +297,17 @@
 
 /* Deceased node */
 .family-tree-node.node-deceased {
-  opacity: 0.7;
+  opacity: 0.5;
 }
 
 .family-tree-node.node-deceased .node-name {
-  text-decoration: line-through;
+  /* text-decoration: line-through; */
   text-decoration-color: var(--ft-text-muted);
 }
 
 .node-deceased-badge {
   position: absolute;
-  top: 4px;
+  bottom: 4px;
   right: 6px;
   font-size: 9px;
   font-weight: 600;

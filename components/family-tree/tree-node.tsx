@@ -3,6 +3,7 @@
 import { useCallback, useRef, useState } from "react";
 import type { Person } from "@/lib/family-tree/database";
 import type { LayoutNode } from "@/lib/family-tree/layout-engine";
+import { Settings } from "lucide-react";
 
 interface TreeNodeProps {
   person: Person;
@@ -109,6 +110,15 @@ export function TreeNode({
       aria-label={`${person.name}, ${person.gender}`}
       tabIndex={0}
     >
+      <div
+        style={{
+          position: "absolute",
+          top: "6px",
+          right: "4px",
+        }}
+        onClick={handleContextMenu}>
+        <Settings size={18}/>
+      </div>
       <div className="node-gender-indicator" />
       <div className="node-name">{person.name}</div>
       <div className="node-sub-label">{displayLabel}</div>
