@@ -36,7 +36,6 @@ interface ContextMenuState {
 
 export function TreeCanvas({ db, ui, dispatch }: TreeCanvasProps) {
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
-  const [dialogMode, setDialogMode] = useState<DialogMode>(null);
   const [dragSourceId, setDragSourceId] = useState<string | null>(null);
   const [dragTargetId, setDragTargetId] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -118,12 +117,22 @@ export function TreeCanvas({ db, ui, dispatch }: TreeCanvasProps) {
       },
       {
         label: "Thêm con",
-        onClick: () => setDialogMode({ type: "add-child", parentId: personId }),
+        onClick: () => dispatch({
+            type: "ADD_CHILD",
+            parentId: personId,
+            name: "",
+            gender: "male",
+          })
       },
       {
         label: "Thêm vợ/chồng",
         onClick: () =>
-          setDialogMode({ type: "add-spouse", personId: personId }),
+          dispatch({
+            type: "ADD_SPOUSE",
+            personId: personId,
+            name: "",
+            gender: "male",
+          }),
         disabled: personHasSpouse,
       },
     ];
@@ -151,7 +160,12 @@ export function TreeCanvas({ db, ui, dispatch }: TreeCanvasProps) {
       items.push({
         label: "Thêm cha/mẹ",
         onClick: () =>
-          setDialogMode({ type: "add-parent", childId: personId }),
+         dispatch({
+            type: "ADD_PARENT",
+            childId: personId,
+            name: "",
+            gender: "male",
+          }),
       });
     }
 
@@ -438,41 +452,6 @@ export function TreeCanvas({ db, ui, dispatch }: TreeCanvasProps) {
     dispatch({ type: "RESET_VIEWPORT" });
   }, [dispatch]);
 
-  // Dialog confirm (AddPersonDialog for name+gender, then reducer auto-opens PersonForm)
-  const handleDialogConfirm = useCallback(
-    (name: string, gender: "male" | "female") => {
-      if (!dialogMode) return;
-      switch (dialogMode.type) {
-        case "add-child":
-          dispatch({
-            type: "ADD_CHILD",
-            parentId: dialogMode.parentId,
-            name,
-            gender,
-          });
-          break;
-        case "add-spouse":
-          dispatch({
-            type: "ADD_SPOUSE",
-            personId: dialogMode.personId,
-            name,
-            gender,
-          });
-          break;
-        case "add-parent":
-          dispatch({
-            type: "ADD_PARENT",
-            childId: dialogMode.childId,
-            name,
-            gender,
-          });
-          break;
-      }
-      setDialogMode(null);
-    },
-    [dialogMode, dispatch]
-  );
-
   // PersonForm submit
   const handlePersonFormSubmit = useCallback(
     (
@@ -494,15 +473,6 @@ export function TreeCanvas({ db, ui, dispatch }: TreeCanvasProps) {
   const handleCanvasContextMenu = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
   }, []);
-
-  // Dialog title
-  const dialogTitle = dialogMode
-    ? dialogMode.type === "add-child"
-      ? "Add Child"
-      : dialogMode.type === "add-spouse"
-        ? "Add Spouse"
-        : "Add Parent"
-    : "";
 
   // Editing person
   const editingPerson =
@@ -630,14 +600,6 @@ export function TreeCanvas({ db, ui, dispatch }: TreeCanvasProps) {
           y={contextMenu.y}
           items={contextMenuItems}
           onClose={closeContextMenu}
-        />
-      )}
-
-      {dialogMode && (
-        <AddPersonDialog
-          title={dialogTitle}
-          onConfirm={handleDialogConfirm}
-          onCancel={() => setDialogMode(null)}
         />
       )}
 
