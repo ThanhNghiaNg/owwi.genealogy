@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState, useEffect } from "react";
 import type { Database } from "@/lib/family-tree/database";
 import { hasSpouse, getParentIds } from "@/lib/family-tree/database";
 import type { Action, UIState } from "@/lib/family-tree/reducer";
@@ -40,6 +40,19 @@ export function TreeCanvas({ db, ui, dispatch }: TreeCanvasProps) {
   const [dragSourceId, setDragSourceId] = useState<string | null>(null);
   const [dragTargetId, setDragTargetId] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Pan state refs (avoid re-renders during pan)
+  const isPanningRef = useRef(false);
+  const panStartRef = useRef({ x: 0, y: 0 });
+  const panStartViewportRef = useRef({ translateX: 0, translateY: 0 });
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  // Pinch state refs
+  const lastPinchDistRef = useRef<number | null>(null);
+  const lastPinchCenterRef = useRef<{ x: number; y: number } | null>(null);
+
+  // Viewport from state
+  const { viewport = { translateX: 0, translateY: 0, scale: 1 } } = ui || {};
 
   // Compute layout
   const layoutMap = useMemo(() => computeLayout(db), [db]);
@@ -135,11 +148,11 @@ export function TreeCanvas({ db, ui, dispatch }: TreeCanvasProps) {
           }),
       });
     } else {
-      items.push( {
+      items.push({
         label: "Thêm cha/mẹ",
         onClick: () =>
           setDialogMode({ type: "add-parent", childId: personId }),
-      })
+      });
     }
 
     items.push({
@@ -194,6 +207,237 @@ export function TreeCanvas({ db, ui, dispatch }: TreeCanvasProps) {
     setDragTargetId(null);
   }, [dragSourceId, dragTargetId, db, dispatch]);
 
+  // ==========================================
+  // ZOOM: Mouse wheel
+  // ==========================================
+  const handleWheel = useCallback(
+    (e: React.WheelEvent) => {
+      e.preventDefault();
+      const container = containerRef.current;
+      if (!container) return;
+
+      const rect = container.getBoundingClientRect();
+      dispatch({
+        type: "ZOOM",
+        delta: e.deltaY,
+        cursorX: e.clientX,
+        cursorY: e.clientY,
+        containerRect: { left: rect.left, top: rect.top },
+      });
+    },
+    [dispatch]
+  );
+
+  // Prevent default wheel on the container natively (for passive: false)
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleNativeWheel = (e: WheelEvent) => {
+      e.preventDefault();
+    };
+
+    container.addEventListener("wheel", handleNativeWheel, { passive: false });
+    return () => {
+      container.removeEventListener("wheel", handleNativeWheel);
+    };
+  }, []);
+
+  // ==========================================
+  // PAN: Mouse (desktop)
+  // ==========================================
+  const handleMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      // Only pan on left click on empty space (not on nodes)
+      if (e.button !== 0) return;
+      const target = e.target as HTMLElement;
+      // Don't start pan if clicking on a node or interactive element
+      if (target.closest(".family-tree-node")) return;
+
+      isPanningRef.current = true;
+      panStartRef.current = { x: e.clientX, y: e.clientY };
+      panStartViewportRef.current = {
+        translateX: viewport.translateX,
+        translateY: viewport.translateY,
+      };
+
+      e.preventDefault();
+    },
+    [viewport.translateX, viewport.translateY]
+  );
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isPanningRef.current) return;
+
+      const dx = e.clientX - panStartRef.current.x;
+      const dy = e.clientY - panStartRef.current.y;
+      if (panStartViewportRef.current) {
+        
+      }
+      dispatch({
+        type: "SET_VIEWPORT",
+        viewport: {
+          scale: viewport.scale,
+          translateX: panStartViewportRef.current.translateX + dx,
+          translateY: panStartViewportRef.current.translateY + dy,
+        },
+      });
+    };
+
+    const handleMouseUp = () => {
+      isPanningRef.current = false;
+    };
+
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [dispatch, viewport.scale]);
+
+  // ==========================================
+  // PAN + PINCH ZOOM: Touch (mobile)
+  // ==========================================
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleTouchStart = (e: TouchEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.closest(".family-tree-node")) return;
+
+      if (e.touches.length === 1) {
+        // Single finger = pan
+        isPanningRef.current = true;
+        panStartRef.current = {
+          x: e.touches[0].clientX,
+          y: e.touches[0].clientY,
+        };
+        panStartViewportRef.current = {
+          translateX: viewport.translateX,
+          translateY: viewport.translateY,
+        };
+      } else if (e.touches.length === 2) {
+        // Two fingers = pinch
+        isPanningRef.current = false;
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        lastPinchDistRef.current = Math.sqrt(dx * dx + dy * dy);
+        lastPinchCenterRef.current = {
+          x: (e.touches[0].clientX + e.touches[1].clientX) / 2,
+          y: (e.touches[0].clientY + e.touches[1].clientY) / 2,
+        };
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      e.preventDefault();
+
+      if (e.touches.length === 1 && isPanningRef.current) {
+        const dx = e.touches[0].clientX - panStartRef.current.x;
+        const dy = e.touches[0].clientY - panStartRef.current.y;
+
+        dispatch({
+          type: "SET_VIEWPORT",
+          viewport: {
+            scale: viewport.scale,
+            translateX: panStartViewportRef.current.translateX + dx,
+            translateY: panStartViewportRef.current.translateY + dy,
+          },
+        });
+      } else if (
+        e.touches.length === 2 &&
+        lastPinchDistRef.current !== null &&
+        lastPinchCenterRef.current !== null
+      ) {
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        const newDist = Math.sqrt(dx * dx + dy * dy);
+        const scaleFactor = newDist / lastPinchDistRef.current;
+
+        const MIN_SCALE = 0.3;
+        const MAX_SCALE = 2.5;
+        const newScale = Math.min(
+          MAX_SCALE,
+          Math.max(MIN_SCALE, viewport.scale * scaleFactor)
+        );
+
+        // Pinch center
+        const cx =
+          (e.touches[0].clientX + e.touches[1].clientX) / 2;
+        const cy =
+          (e.touches[0].clientY + e.touches[1].clientY) / 2;
+
+        const rect = container.getBoundingClientRect();
+        const containerCx = cx - rect.left;
+        const containerCy = cy - rect.top;
+
+        // Zoom toward pinch center
+        const newTranslateX =
+          containerCx -
+          ((containerCx - viewport.translateX) / viewport.scale) * newScale;
+        const newTranslateY =
+          containerCy -
+          ((containerCy - viewport.translateY) / viewport.scale) * newScale;
+
+        dispatch({
+          type: "SET_VIEWPORT",
+          viewport: {
+            scale: newScale,
+            translateX: newTranslateX,
+            translateY: newTranslateY,
+          },
+        });
+
+        lastPinchDistRef.current = newDist;
+        lastPinchCenterRef.current = { x: cx, y: cy };
+      }
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (e.touches.length < 2) {
+        lastPinchDistRef.current = null;
+        lastPinchCenterRef.current = null;
+      }
+      if (e.touches.length === 0) {
+        isPanningRef.current = false;
+      }
+      // If going from 2 fingers to 1, restart pan with current finger
+      if (e.touches.length === 1) {
+        isPanningRef.current = true;
+        panStartRef.current = {
+          x: e.touches[0].clientX,
+          y: e.touches[0].clientY,
+        };
+        panStartViewportRef.current = {
+          translateX: viewport.translateX,
+          translateY: viewport.translateY,
+        };
+      }
+    };
+
+    container.addEventListener("touchstart", handleTouchStart, {
+      passive: false,
+    });
+    container.addEventListener("touchmove", handleTouchMove, {
+      passive: false,
+    });
+    container.addEventListener("touchend", handleTouchEnd);
+
+    return () => {
+      container.removeEventListener("touchstart", handleTouchStart);
+      container.removeEventListener("touchmove", handleTouchMove);
+      container.removeEventListener("touchend", handleTouchEnd);
+    };
+  }, [dispatch, viewport.scale, viewport.translateX, viewport.translateY]);
+
+  // Reset viewport
+  const handleResetViewport = useCallback(() => {
+    dispatch({ type: "RESET_VIEWPORT" });
+  }, [dispatch]);
+
   // Dialog confirm (AddPersonDialog for name+gender, then reducer auto-opens PersonForm)
   const handleDialogConfirm = useCallback(
     (name: string, gender: "male" | "female") => {
@@ -233,7 +477,9 @@ export function TreeCanvas({ db, ui, dispatch }: TreeCanvasProps) {
   const handlePersonFormSubmit = useCallback(
     (
       personId: string,
-      updates: Partial<Omit<import("@/lib/family-tree/database").Person, "id" | "createdAt">>
+      updates: Partial<
+        Omit<import("@/lib/family-tree/database").Person, "id" | "createdAt">
+      >
     ) => {
       dispatch({ type: "UPDATE_PERSON", personId, updates });
       dispatch({ type: "CLOSE_PERSON_FORM" });
@@ -264,44 +510,118 @@ export function TreeCanvas({ db, ui, dispatch }: TreeCanvasProps) {
       ? db.persons.find((p) => p.id === ui.editingPersonId) ?? null
       : null;
 
+  const scalePercent = Math.round(viewport.scale * 100);
+
   return (
     <div
       ref={containerRef}
       className="family-tree-canvas"
       onContextMenu={handleCanvasContextMenu}
       onClick={closeContextMenu}
+      onWheel={handleWheel}
+      onMouseDown={handleMouseDown}
+      style={{ cursor: isPanningRef.current ? "grabbing" : "grab" }}
     >
+      {/* Zoom controls */}
+      <div className="viewport-controls">
+        <button
+          className="viewport-btn"
+          onClick={() => {
+            const container = containerRef.current;
+            if (!container) return;
+            const rect = container.getBoundingClientRect();
+            dispatch({
+              type: "ZOOM",
+              delta: -100,
+              cursorX: rect.left + rect.width / 2,
+              cursorY: rect.top + rect.height / 2,
+              containerRect: { left: rect.left, top: rect.top },
+            });
+          }}
+          aria-label="Zoom in"
+          title="Zoom in"
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          </svg>
+        </button>
+        <span className="viewport-scale">{scalePercent}%</span>
+        <button
+          className="viewport-btn"
+          onClick={() => {
+            const container = containerRef.current;
+            if (!container) return;
+            const rect = container.getBoundingClientRect();
+            dispatch({
+              type: "ZOOM",
+              delta: 100,
+              cursorX: rect.left + rect.width / 2,
+              cursorY: rect.top + rect.height / 2,
+              containerRect: { left: rect.left, top: rect.top },
+            });
+          }}
+          aria-label="Zoom out"
+          title="Zoom out"
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <path d="M3 8h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          </svg>
+        </button>
+        <button
+          className="viewport-btn viewport-btn-reset"
+          onClick={handleResetViewport}
+          aria-label="Reset view"
+          title="Reset view"
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <path d="M2 2v5h5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M2.5 7A5.5 5.5 0 1 1 3 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          </svg>
+        </button>
+      </div>
+
+      {/* Viewport transform container */}
       <div
-        className="family-tree-canvas-inner"
+        ref={contentRef}
+        className="family-tree-viewport"
         style={{
-          position: "relative",
-          minWidth: svgWidth,
-          minHeight: svgHeight,
+          transform: `translate(${viewport.translateX}px, ${viewport.translateY}px)`,
+          transformOrigin: "0 0",
         }}
       >
-        <ConnectionLines
-          lines={connections}
-          svgWidth={svgWidth}
-          svgHeight={svgHeight}
-        />
-        {db.persons.map((person) => {
-          const layout = layoutMap[person.id];
-          if (!layout) return null;
-          return (
-            <TreeNode
-              key={person.id}
-              person={person}
-              layout={layout}
-              onContextMenu={handleContextMenu}
-              onClick={handleNodeClick}
-              onDragStart={handleDragStart}
-              onDragOver={handleDragOver}
-              onDragEnd={handleDragEnd}
-              isDragTarget={dragTargetId === person.id}
-              isDragging={dragSourceId === person.id}
-            />
-          );
-        })}
+        <div
+          className="family-tree-canvas-inner"
+          style={{
+            position: "relative",
+            minWidth: svgWidth,
+            minHeight: svgHeight,
+            transform: ` scale(${viewport.scale})`,
+          }}
+        >
+          <ConnectionLines
+            lines={connections}
+            svgWidth={svgWidth}
+            svgHeight={svgHeight}
+          />
+          {db.persons.map((person) => {
+            const layout = layoutMap[person.id];
+            if (!layout) return null;
+            return (
+              <TreeNode
+                key={person.id}
+                person={person}
+                layout={layout}
+                onContextMenu={handleContextMenu}
+                onClick={handleNodeClick}
+                onDragStart={handleDragStart}
+                onDragOver={handleDragOver}
+                onDragEnd={handleDragEnd}
+                isDragTarget={dragTargetId === person.id}
+                isDragging={dragSourceId === person.id}
+              />
+            );
+          })}
+        </div>
       </div>
 
       {contextMenu && (

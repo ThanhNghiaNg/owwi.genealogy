@@ -16,10 +16,17 @@ import {
 
 // --------------- UI State ---------------
 
+export interface Viewport {
+  scale: number;
+  translateX: number;
+  translateY: number;
+}
+
 export interface UIState {
   isFormOpen: boolean;
   editingPersonId: string | null;
   formMode: "create" | "edit";
+  viewport: Viewport;
 }
 
 export interface AppState {
@@ -27,10 +34,17 @@ export interface AppState {
   ui: UIState;
 }
 
+const initialViewport: Viewport = {
+  scale: 1,
+  translateX: 0,
+  translateY: 0,
+};
+
 const initialUI: UIState = {
   isFormOpen: false,
   editingPersonId: null,
   formMode: "create",
+  viewport: initialViewport,
 };
 
 // --------------- Action Types ---------------
@@ -76,7 +90,16 @@ export type Action =
       formMode: "create" | "edit";
     }
   | { type: "CLOSE_PERSON_FORM" }
-  | { type: "SET_FORM_MODE"; formMode: "create" | "edit" };
+  | { type: "SET_FORM_MODE"; formMode: "create" | "edit" }
+  | { type: "SET_VIEWPORT"; viewport: Viewport }
+  | {
+      type: "ZOOM";
+      delta: number;
+      cursorX: number;
+      cursorY: number;
+      containerRect: { left: number; top: number };
+    }
+  | { type: "RESET_VIEWPORT" };
 
 // --------------- Reducer ---------------
 
@@ -301,6 +324,58 @@ export function familyTreeReducer(state: AppState, action: Action): AppState {
         ui: {
           ...state.ui,
           formMode: action.formMode,
+        },
+      };
+    }
+
+    case "SET_VIEWPORT": {
+      return {
+        ...state,
+        ui: {
+          ...state.ui,
+          viewport: action.viewport,
+        },
+      };
+    }
+
+    case "ZOOM": {
+      const { scale, translateX, translateY } = state.ui.viewport;
+      const MIN_SCALE = 0.3;
+      const MAX_SCALE = 2.5;
+
+      // Calculate new scale
+      const zoomFactor = action.delta > 0 ? 0.92 : 1.08;
+      const newScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, scale * zoomFactor));
+
+      // Cursor position relative to the container
+      const cx = action.cursorX - action.containerRect.left;
+      const cy = action.cursorY - action.containerRect.top;
+
+      // Zoom toward cursor: adjust translate so the point under cursor stays fixed
+      // Point in content space: (cx - translateX) / scale
+      // After zoom: newTranslateX = cx - (cx - translateX) / scale * newScale
+      const newTranslateX = cx - ((cx - translateX) / scale) * newScale;
+      const newTranslateY = cy - ((cy - translateY) / scale) * newScale;
+
+      return {
+        ...state,
+        ui: {
+          ...state.ui,
+          viewport: {
+            scale: newScale,
+            translateX: newTranslateX,
+            translateY: newTranslateY,
+          },
+        },
+      };
+    }
+
+    case "RESET_VIEWPORT": {
+      return {
+        ...state,
+        ui: {
+          ...state.ui,
+          viewport: initialViewport,
         },
       };
     }

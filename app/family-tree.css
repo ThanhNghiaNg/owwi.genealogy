@@ -101,12 +101,82 @@
 .family-tree-canvas {
   width: 100%;
   height: 100%;
-  overflow: auto;
+  overflow: hidden;
+  position: relative;
+  touch-action: none;
+  cursor: grab;
+}
+
+.family-tree-canvas:active {
+  cursor: grabbing;
+}
+
+/* Viewport transform layer */
+.family-tree-viewport {
+  position: absolute;
+  top: 0;
+  left: 0;
   padding: 40px;
+  will-change: transform;
 }
 
 .family-tree-canvas-inner {
   position: relative;
+}
+
+/* Zoom controls */
+.viewport-controls {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: var(--ft-surface);
+  border: 1px solid var(--ft-border);
+  border-radius: 8px;
+  padding: 4px;
+  z-index: 100;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  user-select: none;
+}
+
+.viewport-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ft-text);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.viewport-btn:hover {
+  background: var(--ft-surface-2);
+}
+
+.viewport-btn:active {
+  background: var(--ft-border);
+}
+
+.viewport-scale {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ft-text-muted);
+  min-width: 44px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.viewport-btn-reset {
+  margin-left: 2px;
+  border-left: 1px solid var(--ft-border);
+  border-radius: 0 6px 6px 0;
+  padding-left: 4px;
 }
 
 /* Footer */
