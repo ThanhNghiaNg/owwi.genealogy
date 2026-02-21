@@ -7,9 +7,8 @@ const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'Family Tree Builder',
+  title: 'Phả hệ | Owwi',
   description: 'Build and visualize your family tree with an interactive drag-and-drop interface',
-  generator: 'v0.app',
   icons: {
     icon: [
       {

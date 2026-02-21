@@ -48,7 +48,7 @@ export function AddPersonDialog({
         <h3 className="family-tree-dialog-title">{title}</h3>
         <form onSubmit={handleSubmit}>
           <div className="family-tree-dialog-field">
-            <label htmlFor="person-name">Name</label>
+            <label htmlFor="person-name">Tên</label>
             <input
               ref={inputRef}
               id="person-name"

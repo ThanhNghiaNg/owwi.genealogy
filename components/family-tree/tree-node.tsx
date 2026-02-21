@@ -81,7 +81,7 @@ export function TreeNode({
     ? person.nickname
     : person.birthYear != null
       ? String(person.birthYear)
-      : person.gender;
+      : "";
 
   return (
     <div

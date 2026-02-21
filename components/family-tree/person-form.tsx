@@ -75,7 +75,7 @@ export function PersonForm({ person, mode, onSubmit, onClose }: PersonFormProps)
         <h3 className="family-tree-dialog-title">{title}</h3>
         <form onSubmit={handleSubmit}>
           <div className="family-tree-dialog-field">
-            <label htmlFor="pf-name">Name</label>
+            <label htmlFor="pf-name">Tên</label>
             <input
               ref={nameRef}
               id="pf-name"
@@ -115,7 +115,7 @@ export function PersonForm({ person, mode, onSubmit, onClose }: PersonFormProps)
                 type="number"
                 value={birthYear}
                 onChange={(e) => setBirthYear(e.target.value)}
-                placeholder="e.g. 1985"
+                placeholder="1985"
                 autoComplete="off"
               />
             </div>
@@ -127,7 +127,7 @@ export function PersonForm({ person, mode, onSubmit, onClose }: PersonFormProps)
                 type="text"
                 value={nickname}
                 onChange={(e) => setNickname(e.target.value)}
-                placeholder="Optional"
+                placeholder="Bác Hai Lan"
                 autoComplete="off"
               />
             </div>
@@ -140,7 +140,7 @@ export function PersonForm({ person, mode, onSubmit, onClose }: PersonFormProps)
               type="text"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              placeholder="Optional"
+              placeholder=""
               autoComplete="off"
             />
           </div>
@@ -152,7 +152,7 @@ export function PersonForm({ person, mode, onSubmit, onClose }: PersonFormProps)
               type="text"
               value={address}
               onChange={(e) => setAddress(e.target.value)}
-              placeholder="Optional"
+              placeholder=""
               autoComplete="off"
             />
           </div>
