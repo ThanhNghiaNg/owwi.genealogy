@@ -70,15 +70,6 @@ export function TreeNode({
     [person.id, onDragStart, onDragEnd]
   );
 
-  const handleClick = useCallback(
-    (e: React.MouseEvent) => {
-      if (didDrag) return;
-      e.stopPropagation();
-      onClick(person.id);
-    },
-    [person.id, onClick, didDrag]
-  );
-
   const handleMouseEnter = useCallback(() => {
     onDragOver(person.id);
   }, [person.id, onDragOver]);
@@ -105,7 +96,6 @@ export function TreeNode({
       onContextMenu={handleContextMenu}
       onMouseDown={handleMouseDown}
       onMouseEnter={handleMouseEnter}
-      onClick={handleClick}
       role="treeitem"
       aria-label={`${person.name}, ${person.gender}`}
       tabIndex={0}
