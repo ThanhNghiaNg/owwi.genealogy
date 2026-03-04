@@ -123,6 +123,7 @@ export function familyTreeReducer(state: AppState, action: Action): AppState {
           isFormOpen: true,
           editingPersonId: person.id,
           formMode: "create",
+          viewport: state.ui.viewport,
         },
       };
     }
@@ -152,6 +153,7 @@ export function familyTreeReducer(state: AppState, action: Action): AppState {
           isFormOpen: true,
           editingPersonId: child.id,
           formMode: "create",
+          viewport: state.ui.viewport,
         },
       };
     }
@@ -192,6 +194,7 @@ export function familyTreeReducer(state: AppState, action: Action): AppState {
           isFormOpen: true,
           editingPersonId: spouse.id,
           formMode: "create",
+          viewport: state.ui.viewport,
         },
       };
     }
@@ -213,6 +216,7 @@ export function familyTreeReducer(state: AppState, action: Action): AppState {
             isFormOpen: true,
             editingPersonId: parent.id,
             formMode: "create",
+            viewport: state.ui.viewport,
           },
         };
       } else {
@@ -230,6 +234,7 @@ export function familyTreeReducer(state: AppState, action: Action): AppState {
             isFormOpen: true,
             editingPersonId: parent.id,
             formMode: "create",
+            viewport: state.ui.viewport,
           },
         };
       }
@@ -307,6 +312,7 @@ export function familyTreeReducer(state: AppState, action: Action): AppState {
           isFormOpen: true,
           editingPersonId: action.personId,
           formMode: action.formMode,
+          viewport: state.ui.viewport,
         },
       };
     }
