@@ -54,6 +54,7 @@ Một số file quan trọng:
 - `lib/family-tree/reducer.ts`: state và action của ứng dụng
 - `lib/family-tree/layout-engine.ts`: tính toán vị trí hiển thị của cây
 - `lib/mongodb.ts`: reusable MongoDB connection
+- `lib/db/schemas.ts`: schema definitions và index metadata cho User / Account / OTP / FamilyTree
 - `app/api/health/db/route.ts`: API health check cho MongoDB
 
 ## Cấu trúc thư mục chính
@@ -76,6 +77,8 @@ components/family-tree/
 
 lib/
   mongodb.ts
+  db/
+    schemas.ts
 
 lib/family-tree/
   database.ts
@@ -169,6 +172,32 @@ Một số cấu hình hiện tại đáng lưu ý:
 - Metadata trang đang dùng tiêu đề: **Phả hệ | Owwi**
 - `next.config.mjs` đang bật `typescript.ignoreBuildErrors: true`
 - `next.config.mjs` đang bật `images.unoptimized: true`
+
+## Backend schema foundation
+
+Dự án hiện đã có module schema nền tảng tại `lib/db/schemas.ts` để chuẩn hóa dữ liệu backend cho các thực thể chính:
+
+- `User`
+  - `email`, `emailNormalized`, `passwordHash`, `metadata`
+  - unique index trên `emailNormalized`
+- `Account`
+  - liên kết `userId` với provider social/credentials
+  - unique index trên cặp `provider + providerAccountId`
+- `OTP`
+  - `email`, `emailNormalized`, `codeHash`, `purpose`, `expiresAt`, `consumedAt`
+  - TTL index trên `expiresAt` để tự dọn OTP hết hạn
+- `FamilyTree`
+  - `userId` ownership
+  - `data` giữ snapshot cấu trúc cây hiện tại (`persons`, `relationships`)
+  - unique index theo `userId + name`
+
+Quan hệ chính:
+
+- `User` 1 - N `Account`
+- `User` 1 - N `OTP`
+- `User` 1 - N `FamilyTree`
+
+Phần này mới chỉ là schema/data-contract và metadata cho index, chưa bao gồm auth flow, gửi email OTP, migration hay API CRUD.
 
 ## Định hướng production
 
