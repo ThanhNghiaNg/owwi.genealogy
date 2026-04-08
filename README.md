@@ -1,17 +1,85 @@
 # Owwi Genealogy
 
-Ứng dụng web để xây dựng và xem cây phả hệ theo cách trực quan.
+Owwi Genealogy là ứng dụng web giúp xây dựng và trực quan hóa cây phả hệ theo cách đơn giản, dễ thao tác và phù hợp để dùng trực tiếp trên trình duyệt.
 
-Project hiện được xây bằng **Next.js 16 + React 19 + TypeScript**, tập trung vào trải nghiệm thao tác trực tiếp trên cây gia đình: thêm người, thêm cha/mẹ, thêm vợ/chồng, chỉnh sửa thông tin, sắp xếp thứ tự anh chị em và điều hướng canvas bằng kéo/thả, cuộn chuột hoặc pinch zoom.
+Phiên bản hiện tại tập trung vào trải nghiệm quản lý cây gia đình ở phía client: tạo người đầu tiên, mở rộng quan hệ, chỉnh sửa thông tin, sắp xếp thứ tự anh chị em và điều hướng cây bằng thao tác kéo/thả, cuộn chuột hoặc chạm.
 
-## Tính năng chính
+## Điểm nổi bật
 
-- Tạo cây phả hệ bắt đầu từ người đầu tiên
-- Thêm:
+- Tạo và mở rộng cây phả hệ trực tiếp trên giao diện
+- Thêm quan hệ:
   - con
-  - vợ/chồng
   - cha/mẹ
-- Chỉnh sửa thông tin từng người:
+  - vợ/chồng
+- Chỉnh sửa thông tin cá nhân của từng thành viên
+- Xóa thành viên khỏi cây
+- Sắp xếp lại thứ tự con trong cùng gia đình
+- Hiển thị rõ quan hệ cha/mẹ - con và vợ chồng
+- Điều hướng canvas bằng pan, zoom và reset viewport
+- Lưu dữ liệu cục bộ trên trình duyệt bằng `localStorage`
+
+## Công nghệ sử dụng
+
+- Next.js 16
+- React 19
+- TypeScript
+- Tailwind CSS 4
+- Radix UI
+- Lucide React
+- next-themes
+- Vercel Analytics
+
+## Kiến trúc hiện tại
+
+Ứng dụng hiện chạy theo mô hình client-side.
+
+- Dữ liệu được lưu trong `localStorage`
+- Key lưu trữ hiện tại: `family-tree-db`
+- State chính được quản lý bằng `useReducer`
+- Bố cục cây được tính toán ở frontend bằng layout engine tự xây dựng
+- Chưa có backend production trong app hiện tại
+
+### Mô hình dữ liệu
+
+Dữ liệu được tổ chức thành hai nhóm chính:
+
+- `persons`: thông tin cá nhân
+- `relationships`: các mối quan hệ như `parent` và `spouse`
+
+Một số file quan trọng:
+
+- `lib/family-tree/database.ts`: lưu trữ và truy vấn dữ liệu
+- `lib/family-tree/reducer.ts`: state và action của ứng dụng
+- `lib/family-tree/layout-engine.ts`: tính toán vị trí hiển thị của cây
+
+## Cấu trúc thư mục chính
+
+```text
+app/
+  layout.tsx
+  page.tsx
+  family-tree.css
+
+components/family-tree/
+  family-tree-app.tsx
+  tree-canvas.tsx
+  tree-node.tsx
+  connection-lines.tsx
+  context-menu.tsx
+  add-person-dialog.tsx
+  person-form.tsx
+
+lib/family-tree/
+  database.ts
+  reducer.ts
+  layout-engine.ts
+```
+
+## Tính năng hiện có
+
+- Khởi tạo cây từ một người đầu tiên
+- Thêm con, cha/mẹ, vợ/chồng
+- Cập nhật thông tin cơ bản của từng người:
   - tên
   - giới tính
   - năm sinh
@@ -19,90 +87,30 @@ Project hiện được xây bằng **Next.js 16 + React 19 + TypeScript**, tậ
   - số điện thoại
   - địa chỉ
   - trạng thái đã mất
-- Xóa người khỏi cây
-- Sắp xếp lại thứ tự con bằng:
-  - di chuyển trái/phải
-  - kéo thả giữa các anh chị em
-- Hiển thị quan hệ:
-  - cha/mẹ - con
-  - vợ chồng
-- Canvas tương tác:
-  - pan bằng kéo chuột / chạm
-  - zoom bằng con lăn chuột
-  - pinch zoom trên thiết bị cảm ứng
-  - reset viewport
-- Lưu dữ liệu ngay trên trình duyệt bằng `localStorage`
+- Di chuyển thứ tự con bằng thao tác trái/phải và kéo thả
+- Pan và zoom cây trên desktop và thiết bị cảm ứng
+- Lưu trạng thái làm việc ngay trên trình duyệt
 
-## Kiến trúc hiện tại
-
-Ứng dụng đang là **client-side app**.
-
-- Dữ liệu được lưu trong `localStorage` với key: `family-tree-db`
-- Không có backend production trong phần app Next.js hiện tại
-- Layout cây được tính ở frontend bằng engine tự viết
-- State được quản lý bằng `useReducer`
-
-### Mô hình dữ liệu
-
-Dữ liệu được tổ chức theo 2 tập chính:
-
-- `persons`
-- `relationships`
-
-Trong đó:
-
-- `persons` chứa thông tin cá nhân
-- `relationships` chứa quan hệ kiểu:
-  - `parent`
-  - `spouse`
-
-File chính cho data layer:
-
-- `lib/family-tree/database.ts`
-
-## Cấu trúc thư mục đáng chú ý
-
-```text
-app/
-  layout.tsx                # Root layout của Next.js
-  page.tsx                  # Entry page, render FamilyTreeApp
-  family-tree.css           # CSS chính cho giao diện cây phả hệ
-
-components/family-tree/
-  family-tree-app.tsx       # App shell
-  tree-canvas.tsx           # Canvas, pan/zoom, node rendering
-  tree-node.tsx             # UI cho từng người trong cây
-  connection-lines.tsx      # SVG line cho quan hệ
-  context-menu.tsx          # Menu thao tác trên node
-  add-person-dialog.tsx     # Dialog thêm người
-  person-form.tsx           # Form chỉnh sửa chi tiết
-
-lib/family-tree/
-  database.ts               # Persistence + query helper
-  reducer.ts                # App state + actions
-  layout-engine.ts          # Tính toán vị trí node/line
-```
-
-## Cách chạy local
+## Cài đặt và chạy local
 
 ### Yêu cầu
 
-- Node.js 20+ (khuyến nghị bản mới)
+- Node.js 20+
 - pnpm
 
-### Cài đặt
+### Cài đặt dependencies
 
 ```bash
 pnpm install
 ```
 
-### Chạy môi trường dev
+### Chạy môi trường phát triển
 
 ```bash
 pnpm dev
 ```
 
-Sau đó mở:
+Mở ứng dụng tại:
 
 <http://localhost:3000>
 
@@ -122,54 +130,28 @@ pnpm start
 pnpm lint
 ```
 
-## Cách dùng nhanh
+## Cách sử dụng nhanh
 
 1. Mở ứng dụng
-2. Nhấn **Add First Person** để tạo người đầu tiên
+2. Chọn **Add First Person** để tạo thành viên đầu tiên
 3. Điền thông tin cơ bản
-4. Dùng menu trên từng node để:
-   - chỉnh sửa
-   - thêm con
-   - thêm vợ/chồng
-   - thêm cha/mẹ
-   - xóa
-5. Dùng chuột hoặc cảm ứng để pan/zoom cây
+4. Dùng menu trên từng node để thêm hoặc chỉnh sửa quan hệ
+5. Dùng chuột hoặc cảm ứng để di chuyển và phóng to/thu nhỏ cây
 
-## Ghi chú kỹ thuật
+## Ghi chú triển khai
 
-- App title hiện tại: **Phả hệ | Owwi**
-- Phần mô tả metadata: *Build and visualize your family tree with an interactive drag-and-drop interface*
-- `next.config.mjs` hiện đang bật:
-  - `typescript.ignoreBuildErrors: true`
-  - `images.unoptimized: true`
-- Một số text trong UI đang pha trộn giữa tiếng Việt và tiếng Anh; README này mô tả theo trạng thái code hiện tại
+Một số cấu hình hiện tại đáng lưu ý:
 
-## Tình trạng repo hiện tại
+- Metadata trang đang dùng tiêu đề: **Phả hệ | Owwi**
+- `next.config.mjs` đang bật `typescript.ignoreBuildErrors: true`
+- `next.config.mjs` đang bật `images.unoptimized: true`
 
-Repo hiện chủ yếu xoay quanh giao diện web cây phả hệ. Ngoài ra còn có một vài file rời như `app.py` và `test_app.py` không phản ánh luồng chính của ứng dụng Next.js hiện tại.
+## Định hướng production
 
-## Hướng phát triển hợp lý tiếp theo
+Để phù hợp hơn với môi trường production trong các phiên bản tiếp theo, các hạng mục nên được ưu tiên gồm:
 
-Nếu tiếp tục phát triển project này, các bước đáng làm nhất là:
-
-- thêm backend / đồng bộ dữ liệu nhiều thiết bị
-- import/export dữ liệu phả hệ
-- tìm kiếm người trong cây
-- hỗ trợ quan hệ phức tạp hơn
-- chuẩn hóa toàn bộ UI sang một ngôn ngữ duy nhất
-- bổ sung test cho reducer, database layer và layout engine
-
-## Công nghệ sử dụng
-
-- Next.js 16
-- React 19
-- TypeScript
-- Radix UI
-- Lucide React
-- Tailwind CSS 4
-- next-themes
-- Vercel Analytics
-
-## License
-
-Chưa thấy file license trong repo. Nếu đây là repo public, nên bổ sung `LICENSE` để làm rõ quyền sử dụng.
+- bổ sung backend hoặc cơ chế đồng bộ dữ liệu
+- hỗ trợ import/export dữ liệu phả hệ
+- bổ sung test cho data layer, reducer và layout engine
+- thống nhất ngôn ngữ giao diện
+- cải thiện khả năng tìm kiếm và quản lý cây lớn
