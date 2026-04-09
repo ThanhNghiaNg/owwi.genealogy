@@ -1,40 +1,34 @@
-"use client";
+'use client'
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from 'react'
 
 interface AddPersonDialogProps {
-  title: string;
-  onConfirm: (name: string, gender: "male" | "female") => void;
-  onCancel: () => void;
+  title: string
+  onConfirm: (name: string, gender: 'male' | 'female') => void
+  onCancel: () => void
 }
 
-export function AddPersonDialog({
-  title,
-  onConfirm,
-  onCancel,
-}: AddPersonDialogProps) {
-  const [name, setName] = useState("");
-  const [gender, setGender] = useState<"male" | "female">("male");
-  const inputRef = useRef<HTMLInputElement>(null);
+export function AddPersonDialog({ title, onConfirm, onCancel }: AddPersonDialogProps) {
+  const [name, setName] = useState('')
+  const [gender, setGender] = useState<'male' | 'female'>('male')
+  const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
+    inputRef.current?.focus()
+  }, [])
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") onCancel();
+      if (e.key === 'Escape') onCancel()
     }
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [onCancel]);
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [onCancel])
 
   function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    const trimmed = name.trim();
-    if (trimmed) {
-      onConfirm(trimmed, gender);
-    }
+    e.preventDefault()
+    const trimmed = name.trim()
+    if (trimmed) onConfirm(trimmed, gender)
   }
 
   return (
@@ -55,43 +49,39 @@ export function AddPersonDialog({
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Enter name..."
+              placeholder="Nhập tên..."
               autoComplete="off"
             />
           </div>
           <div className="family-tree-dialog-field">
-            <label>Gender</label>
+            <label>Giới tính</label>
             <div className="family-tree-dialog-gender">
               <button
                 type="button"
-                className={`gender-btn male ${gender === "male" ? "active" : ""}`}
-                onClick={() => setGender("male")}
+                className={`gender-btn male ${gender === 'male' ? 'active' : ''}`}
+                onClick={() => setGender('male')}
               >
-                Male
+                Nam
               </button>
               <button
                 type="button"
-                className={`gender-btn female ${gender === "female" ? "active" : ""}`}
-                onClick={() => setGender("female")}
+                className={`gender-btn female ${gender === 'female' ? 'active' : ''}`}
+                onClick={() => setGender('female')}
               >
-                Female
+                Nữ
               </button>
             </div>
           </div>
           <div className="family-tree-dialog-actions">
             <button type="button" className="btn-cancel" onClick={onCancel}>
-              Cancel
+              Hủy
             </button>
-            <button
-              type="submit"
-              className="btn-confirm"
-              disabled={!name.trim()}
-            >
-              Add
+            <button type="submit" className="btn-confirm" disabled={!name.trim()}>
+              Thêm
             </button>
           </div>
         </form>
       </div>
     </div>
-  );
+  )
 }

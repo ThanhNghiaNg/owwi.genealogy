@@ -2,62 +2,63 @@
 // Two tables: persons and relationships, persisted to localStorage
 
 export interface Person {
-  id: string;
-  name: string;
-  gender: "male" | "female";
-  birthYear: number | null;
-  nickname: string | null;
-  phone: string | null;
-  address: string | null;
-  isDeceased: boolean;
-  createdAt: number;
+  id: string
+  name: string
+  gender: 'male' | 'female'
+  birthYear: number | null
+  nickname: string | null
+  phone: string | null
+  address: string | null
+  isDeceased: boolean
+  createdAt: number
 }
 
 export interface Relationship {
-  id: string;
-  type: "parent" | "spouse";
-  person1Id: string;
-  person2Id: string;
-  orderIndex: number;
+  id: string
+  type: 'parent' | 'spouse'
+  person1Id: string
+  person2Id: string
+  orderIndex: number
 }
 
 export interface Database {
-  persons: Person[];
-  relationships: Relationship[];
+  persons: Person[]
+  relationships: Relationship[]
 }
 
-const STORAGE_KEY = "family-tree-db";
+const STORAGE_KEY = 'family-tree-db'
 
 function generateId(): string {
-  return `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+  return `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
 }
 
 // --------------- Persistence ---------------
 
 export function loadDatabase(): Database {
-  if (typeof window === "undefined") {
-    return { persons: [], relationships: [] };
-  }
+  if (typeof window === 'undefined') return { persons: [], relationships: [] }
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(STORAGE_KEY)
+    console.log({raw})
     if (raw) {
-      const parsed = JSON.parse(raw) as Database;
+      const parsed = JSON.parse(raw) as Database
+      console.log({parsed, hehe: {
+        persons: Array.isArray(parsed.persons) ? parsed.persons : [],
+        relationships: Array.isArray(parsed.relationships) ? parsed.relationships : [],
+      }})
       return {
         persons: Array.isArray(parsed.persons) ? parsed.persons : [],
-        relationships: Array.isArray(parsed.relationships)
-          ? parsed.relationships
-          : [],
-      };
+        relationships: Array.isArray(parsed.relationships) ? parsed.relationships : [],
+      }
     }
   } catch {
     // corrupted data – start fresh
   }
-  return { persons: [], relationships: [] };
+  return { persons: [], relationships: [] }
 }
 
 export function saveDatabase(db: Database): void {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+  if (typeof window === 'undefined') return
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(db))
 }
 
 // --------------- Person CRUD ---------------
@@ -65,7 +66,7 @@ export function saveDatabase(db: Database): void {
 export function createPerson(
   db: Database,
   name: string,
-  gender: "male" | "female"
+  gender: 'male' | 'female'
 ): { db: Database; person: Person } {
   const person: Person = {
     id: generateId(),
@@ -77,12 +78,9 @@ export function createPerson(
     address: null,
     isDeceased: false,
     createdAt: Date.now(),
-  };
-  const newDb: Database = {
-    ...db,
-    persons: [...db.persons, person],
-  };
-  return { db: newDb, person };
+  }
+  const newDb: Database = { ...db, persons: [...db.persons, person] }
+  return { db: newDb, person }
 }
 
 export function deletePerson(db: Database, personId: string): Database {
@@ -91,34 +89,29 @@ export function deletePerson(db: Database, personId: string): Database {
     relationships: db.relationships.filter(
       (r) => r.person1Id !== personId && r.person2Id !== personId
     ),
-  };
+  }
 }
 
 export function updatePerson(
   db: Database,
   personId: string,
-  updates: Partial<Omit<Person, "id" | "createdAt">>
+  updates: Partial<Omit<Person, 'id' | 'createdAt'>>
 ): Database {
   return {
     ...db,
-    persons: db.persons.map((p) =>
-      p.id === personId ? { ...p, ...updates } : p
-    ),
-  };
+    persons: db.persons.map((p) => (p.id === personId ? { ...p, ...updates } : p)),
+  }
 }
 
-export function getPersonById(
-  db: Database,
-  id: string
-): Person | undefined {
-  return db.persons.find((p) => p.id === id);
+export function getPersonById(db: Database, id: string): Person | undefined {
+  return db.persons.find((p) => p.id === id)
 }
 
 // --------------- Relationship CRUD ---------------
 
 export function addRelationship(
   db: Database,
-  type: "parent" | "spouse",
+  type: 'parent' | 'spouse',
   person1Id: string,
   person2Id: string,
   orderIndex: number = 0
@@ -129,11 +122,8 @@ export function addRelationship(
     person1Id,
     person2Id,
     orderIndex,
-  };
-  return {
-    ...db,
-    relationships: [...db.relationships, rel],
-  };
+  }
+  return { ...db, relationships: [...db.relationships, rel] }
 }
 
 // --------------- Relationship Queries ---------------
@@ -141,125 +131,109 @@ export function addRelationship(
 /** Get children of a person (person is parent, children are person2Id) */
 export function getChildren(db: Database, parentId: string): Person[] {
   const childRels = db.relationships
-    .filter((r) => r.type === "parent" && r.person1Id === parentId)
-    .sort((a, b) => a.orderIndex - b.orderIndex);
-
+    .filter((r) => r.type === 'parent' && r.person1Id === parentId)
+    .sort((a, b) => a.orderIndex - b.orderIndex)
   return childRels
     .map((r) => db.persons.find((p) => p.id === r.person2Id))
-    .filter(Boolean) as Person[];
+    .filter(Boolean) as Person[]
 }
 
 /** Get all parent IDs of a person */
 export function getParentIds(db: Database, personId: string): string[] {
   return db.relationships
-    .filter((r) => r.type === "parent" && r.person2Id === personId)
-    .map((r) => r.person1Id);
+    .filter((r) => r.type === 'parent' && r.person2Id === personId)
+    .map((r) => r.person1Id)
 }
 
 /** Get spouse of a person (if any) */
-export function getSpouse(
-  db: Database,
-  personId: string
-): Person | undefined {
+export function getSpouse(db: Database, personId: string): Person | undefined {
   const spouseRel = db.relationships.find(
     (r) =>
-      r.type === "spouse" &&
+      r.type === 'spouse' &&
       (r.person1Id === personId || r.person2Id === personId)
-  );
-  if (!spouseRel) return undefined;
-  const spouseId =
-    spouseRel.person1Id === personId
-      ? spouseRel.person2Id
-      : spouseRel.person1Id;
-  return db.persons.find((p) => p.id === spouseId);
+  )
+  if (!spouseRel) return undefined
+  const spouseId = spouseRel.person1Id === personId ? spouseRel.person2Id : spouseRel.person1Id
+  return db.persons.find((p) => p.id === spouseId)
 }
 
 /** Check if a person has a spouse */
 export function hasSpouse(db: Database, personId: string): boolean {
   return db.relationships.some(
     (r) =>
-      r.type === "spouse" &&
-      (r.person1Id === personId || r.person2Id === personId)
-  );
+      r.type === 'spouse' && (r.person1Id === personId || r.person2Id === personId)
+  )
 }
 
 /** Find the root person(s): persons with no parents */
 export function findRoots(db: Database): Person[] {
   const childIds = new Set(
-    db.relationships
-      .filter((r) => r.type === "parent")
-      .map((r) => r.person2Id)
-  );
-  return db.persons.filter((p) => !childIds.has(p.id));
+    db.relationships.filter((r) => r.type === 'parent').map((r) => r.person2Id)
+  )
+  return db.persons.filter((p) => !childIds.has(p.id))
 }
 
 /** Get the single root: for a connected tree, pick the first root found */
 export function getRoot(db: Database): Person | undefined {
-  const roots = findRoots(db);
-  return roots.length > 0 ? roots[0] : undefined;
+  const roots = findRoots(db)
+  return roots.length > 0 ? roots[0] : undefined
 }
 
-/** Get combined children of a couple (children shared by both, or children of either) */
+/** Get children of a couple */
 export function getCoupleChildren(
   db: Database,
-  person1Id: string,
-  person2Id: string
+  parent1Id: string,
+  parent2Id: string
 ): Person[] {
-  const childRels = db.relationships
-    .filter(
-      (r) =>
-        r.type === "parent" &&
-        (r.person1Id === person1Id || r.person1Id === person2Id)
-    )
-    .sort((a, b) => a.orderIndex - b.orderIndex);
-
-  // Deduplicate children (a child may appear from both parents)
-  const seen = new Set<string>();
-  const children: Person[] = [];
-  for (const rel of childRels) {
-    if (!seen.has(rel.person2Id)) {
-      seen.add(rel.person2Id);
-      const person = db.persons.find((p) => p.id === rel.person2Id);
-      if (person) children.push(person);
-    }
-  }
-  return children;
+  const p1Children = new Set(
+    db.relationships
+      .filter((r) => r.type === 'parent' && r.person1Id === parent1Id)
+      .map((r) => r.person2Id)
+  )
+  const p2Children = new Set(
+    db.relationships
+      .filter((r) => r.type === 'parent' && r.person1Id === parent2Id)
+      .map((r) => r.person2Id)
+  )
+  const sharedIds = [...p1Children].filter((id) => p2Children.has(id))
+  return sharedIds
+    .map((id) => db.persons.find((p) => p.id === id))
+    .filter(Boolean) as Person[]
 }
 
-/** Get the max order index among children of a parent */
+/** Get max orderIndex among children of a parent */
 export function getMaxChildOrder(db: Database, parentId: string): number {
   const childRels = db.relationships.filter(
-    (r) => r.type === "parent" && r.person1Id === parentId
-  );
-  if (childRels.length === 0) return -1;
-  return Math.max(...childRels.map((r) => r.orderIndex));
+    (r) => r.type === 'parent' && r.person1Id === parentId
+  )
+  if (childRels.length === 0) return -1
+  return Math.max(...childRels.map((r) => r.orderIndex))
 }
 
-/** Swap order of two siblings */
+/** Swap child order (move left or right) */
 export function swapChildOrder(
   db: Database,
   parentId: string,
   childId: string,
-  direction: "left" | "right"
+  direction: 'left' | 'right'
 ): Database {
   const childRels = db.relationships
-    .filter((r) => r.type === "parent" && r.person1Id === parentId)
-    .sort((a, b) => a.orderIndex - b.orderIndex);
+    .filter((r) => r.type === 'parent' && r.person1Id === parentId)
+    .sort((a, b) => a.orderIndex - b.orderIndex)
 
-  const idx = childRels.findIndex((r) => r.person2Id === childId);
-  if (idx === -1) return db;
+  const currentIdx = childRels.findIndex((r) => r.person2Id === childId)
+  if (currentIdx === -1) return db
 
-  const swapIdx = direction === "left" ? idx - 1 : idx + 1;
-  if (swapIdx < 0 || swapIdx >= childRels.length) return db;
+  const targetIdx = direction === 'left' ? currentIdx - 1 : currentIdx + 1
+  if (targetIdx < 0 || targetIdx >= childRels.length) return db
 
-  const relA = childRels[idx];
-  const relB = childRels[swapIdx];
+  const currentRel = childRels[currentIdx]
+  const targetRel = childRels[targetIdx]
 
   const newRels = db.relationships.map((r) => {
-    if (r.id === relA.id) return { ...r, orderIndex: relB.orderIndex };
-    if (r.id === relB.id) return { ...r, orderIndex: relA.orderIndex };
-    return r;
-  });
-
-  return { ...db, relationships: newRels };
+    if (r.id === currentRel.id) return { ...r, orderIndex: targetRel.orderIndex }
+    if (r.id === targetRel.id) return { ...r, orderIndex: currentRel.orderIndex }
+    return r
+  })
+  return { ...db, relationships: newRels }
 }

@@ -371,7 +371,6 @@
 }
 
 .family-tree-node.node-deceased .node-name {
-  /* text-decoration: line-through; */
   text-decoration-color: var(--ft-text-muted);
 }
 
@@ -483,7 +482,8 @@
   margin-bottom: 6px;
 }
 
-.family-tree-dialog-field input[type="text"] {
+.family-tree-dialog-field input[type="text"],
+.family-tree-dialog-field input[type="email"] {
   width: 100%;
   padding: 10px 12px;
   border: 1px solid var(--ft-border);
@@ -496,11 +496,13 @@
   box-sizing: border-box;
 }
 
-.family-tree-dialog-field input[type="text"]:focus {
+.family-tree-dialog-field input[type="text"]:focus,
+.family-tree-dialog-field input[type="email"]:focus {
   border-color: var(--ft-accent);
 }
 
-.family-tree-dialog-field input[type="text"]::placeholder {
+.family-tree-dialog-field input[type="text"]::placeholder,
+.family-tree-dialog-field input[type="email"]::placeholder {
   color: var(--ft-text-muted);
 }
 
@@ -651,6 +653,7 @@
   accent-color: var(--ft-accent);
   cursor: pointer;
 }
+
 .person-form-checkbox-label.flex {
   display: flex;
 }

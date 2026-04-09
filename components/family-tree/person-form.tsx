@@ -1,68 +1,56 @@
-"use client";
+'use client'
 
-import { useState, useEffect, useRef } from "react";
-import type { Person } from "@/lib/family-tree/database";
+import { useState, useEffect, useRef } from 'react'
+import type { Person } from '@/lib/family-tree/database'
 
 interface PersonFormProps {
-  person: Person | null;
-  mode: "create" | "edit";
-  onSubmit: (
-    personId: string,
-    updates: Partial<Omit<Person, "id" | "createdAt">>
-  ) => void;
-  onClose: () => void;
+  person: Person | null
+  mode: 'create' | 'edit'
+  onSubmit: (personId: string, updates: Partial<Omit<Person, 'id' | 'createdAt'>>) => void
+  onClose: () => void
 }
 
 export function PersonForm({ person, mode, onSubmit, onClose }: PersonFormProps) {
-  const [name, setName] = useState(person?.name ?? "");
-  const [gender, setGender] = useState<"male" | "female">(
-    person?.gender ?? "male"
-  );
+  const [name, setName] = useState(person?.name ?? '')
+  const [gender, setGender] = useState<'male' | 'female'>(person?.gender ?? 'male')
   const [birthYear, setBirthYear] = useState(
-    person?.birthYear != null ? String(person.birthYear) : ""
-  );
-  const [nickname, setNickname] = useState(person?.nickname ?? "");
-  const [phone, setPhone] = useState(person?.phone ?? "");
-  const [address, setAddress] = useState(person?.address ?? "");
-  const [isDeceased, setIsDeceased] = useState(person?.isDeceased ?? false);
+    person?.birthYear != null ? String(person.birthYear) : ''
+  )
+  const [nickname, setNickname] = useState(person?.nickname ?? '')
+  const [phone, setPhone] = useState(person?.phone ?? '')
+  const [address, setAddress] = useState(person?.address ?? '')
+  const [isDeceased, setIsDeceased] = useState(person?.isDeceased ?? false)
 
-  const nameRef = useRef<HTMLInputElement>(null);
+  const nameRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    nameRef.current?.focus();
-  }, []);
+    nameRef.current?.focus()
+  }, [])
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
+      if (e.key === 'Escape') onClose()
     }
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [onClose]);
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [onClose])
 
   function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!person) return;
-
-    const parsedBirthYear = birthYear.trim()
-      ? parseInt(birthYear.trim(), 10)
-      : null;
-
+    e.preventDefault()
+    if (!person) return
+    const parsedBirthYear = birthYear.trim() ? parseInt(birthYear.trim(), 10) : null
     onSubmit(person.id, {
       name: name.trim() || person.name,
       gender,
-      birthYear:
-        parsedBirthYear !== null && !isNaN(parsedBirthYear)
-          ? parsedBirthYear
-          : null,
+      birthYear: parsedBirthYear !== null && !isNaN(parsedBirthYear) ? parsedBirthYear : null,
       nickname: nickname.trim() || null,
       phone: phone.trim() || null,
       address: address.trim() || null,
       isDeceased,
-    });
+    })
   }
 
-  const title = mode === "edit" ? "Chỉnh sửa thông tin" : "Chi tiết";
+  const title = mode === 'edit' ? 'Chỉnh sửa thông tin' : 'Chi tiết'
 
   return (
     <div className="family-tree-dialog-overlay" onClick={onClose}>
@@ -82,25 +70,27 @@ export function PersonForm({ person, mode, onSubmit, onClose }: PersonFormProps)
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Enter name..."
+              placeholder="Nhập tên..."
               autoComplete="off"
             />
           </div>
 
           <div className="family-tree-dialog-field">
-            <label>Giới tính <span className="field-required">*</span></label>
+            <label>
+              Giới tính <span className="field-required">*</span>
+            </label>
             <div className="family-tree-dialog-gender">
               <button
                 type="button"
-                className={`gender-btn male ${gender === "male" ? "active" : ""}`}
-                onClick={() => setGender("male")}
+                className={`gender-btn male ${gender === 'male' ? 'active' : ''}`}
+                onClick={() => setGender('male')}
               >
                 Nam
               </button>
               <button
                 type="button"
-                className={`gender-btn female ${gender === "female" ? "active" : ""}`}
-                onClick={() => setGender("female")}
+                className={`gender-btn female ${gender === 'female' ? 'active' : ''}`}
+                onClick={() => setGender('female')}
               >
                 Nữ
               </button>
@@ -119,7 +109,6 @@ export function PersonForm({ person, mode, onSubmit, onClose }: PersonFormProps)
                 autoComplete="off"
               />
             </div>
-
             <div className="family-tree-dialog-field">
               <label htmlFor="pf-nickname">Biệt danh</label>
               <input
@@ -179,5 +168,5 @@ export function PersonForm({ person, mode, onSubmit, onClose }: PersonFormProps)
         </form>
       </div>
     </div>
-  );
+  )
 }
