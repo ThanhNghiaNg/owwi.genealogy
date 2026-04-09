@@ -2,6 +2,7 @@ import { randomInt, randomUUID, scrypt as scryptCallback, timingSafeEqual } from
 import { promisify } from "util";
 
 import { type Collection, type Db, MongoServerError } from "mongodb";
+import nodemailer from "nodemailer";
 import { z } from "zod";
 
 import {
@@ -11,7 +12,6 @@ import {
   normalizeEmail,
   schemaIndexes,
   type CollectionSchemaMap,
-  type OtpDocument,
   type OtpPurpose,
   type UserDocument,
 } from "@/lib/db/schemas";
@@ -148,6 +148,115 @@ export function normalizePurpose(purpose: OtpPurpose | undefined): OtpPurpose {
   return purpose ?? "verify-email";
 }
 
+function getSmtpConfig() {
+  const host = process.env.SMTP_HOST;
+  const portRaw = process.env.SMTP_PORT;
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+  const from = process.env.SMTP_FROM;
+  const secureRaw = process.env.SMTP_SECURE;
+
+  if (!host || !portRaw || !user || !pass || !from) {
+    throw new HttpError(500, "SMTP is not configured");
+  }
+
+  const port = Number(portRaw);
+  if (!Number.isInteger(port) || port <= 0) {
+    throw new HttpError(500, "SMTP_PORT must be a valid positive integer");
+  }
+
+  const secure = secureRaw ? secureRaw.toLowerCase() === "true" : port === 465;
+
+  return {
+    host,
+    port,
+    secure,
+    user,
+    pass,
+    from,
+  };
+}
+
+function getOtpEmailSubject(purpose: OtpPurpose): string {
+  switch (purpose) {
+    case "sign-in":
+      return "Your sign-in OTP code";
+    case "sign-up":
+      return "Your sign-up OTP code";
+    case "reset-password":
+      return "Your password reset OTP code";
+    case "link-account":
+      return "Your account linking OTP code";
+    case "verify-email":
+    default:
+      return "Verify your email with this OTP code";
+  }
+}
+
+function getOtpEmailIntro(purpose: OtpPurpose): string {
+  switch (purpose) {
+    case "sign-in":
+      return "Use the OTP below to complete your sign-in.";
+    case "sign-up":
+      return "Use the OTP below to complete your sign-up.";
+    case "reset-password":
+      return "Use the OTP below to reset your password.";
+    case "link-account":
+      return "Use the OTP below to link your account.";
+    case "verify-email":
+    default:
+      return "Use the OTP below to verify your email address.";
+  }
+}
+
+export async function sendOtpEmail(params: {
+  email: string;
+  otpCode: string;
+  purpose: OtpPurpose;
+  expiresAt: Date;
+}) {
+  const smtp = getSmtpConfig();
+  const transporter = nodemailer.createTransport({
+    host: smtp.host,
+    port: smtp.port,
+    secure: smtp.secure,
+    auth: {
+      user: smtp.user,
+      pass: smtp.pass,
+    },
+  });
+
+  const expiresInMinutes = Math.max(1, Math.ceil((params.expiresAt.getTime() - Date.now()) / 60_000));
+  const subject = getOtpEmailSubject(params.purpose);
+  const intro = getOtpEmailIntro(params.purpose);
+
+  const text = [
+    intro,
+    "",
+    `OTP: ${params.otpCode}`,
+    `Expires in: ${expiresInMinutes} minute(s)`,
+    "",
+    "If you did not request this code, you can ignore this email.",
+  ].join("\n");
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; line-height: 1.5; color: #111;">
+      <p>${intro}</p>
+      <p><strong>OTP:</strong> ${params.otpCode}</p>
+      <p><strong>Expires in:</strong> ${expiresInMinutes} minute(s)</p>
+      <p>If you did not request this code, you can ignore this email.</p>
+    </div>
+  `;
+
+  await transporter.sendMail({
+    from: smtp.from,
+    to: params.email,
+    subject,
+    text,
+    html,
+  });
+}
+
 export async function createUser(params: { email: string; password: string; name?: string }): Promise<UserDocument> {
   const db = await getAuthDb();
   const users = getCollection(db, COLLECTIONS.users);
@@ -244,9 +353,14 @@ export async function createOtp(params: { email: string; purpose: OtpPurpose }) 
   });
 
   await otps.insertOne(otp);
+  await sendOtpEmail({
+    email: params.email.trim(),
+    otpCode,
+    purpose: params.purpose,
+    expiresAt,
+  });
 
   return {
-    otpCode,
     expiresAt,
     purpose: params.purpose,
   };
