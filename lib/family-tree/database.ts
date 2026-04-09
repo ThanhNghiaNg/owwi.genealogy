@@ -27,6 +27,53 @@ export interface Database {
 }
 
 const STORAGE_KEY = "family-tree-db";
+export const FAMILY_TREE_MIGRATION_FLAG_KEY = "family-tree-migrated-to-server";
+
+export function getFamilyTreeStorageKey(): string {
+  return STORAGE_KEY;
+}
+
+export function getFamilyTreeMigrationFlagKey(): string {
+  return FAMILY_TREE_MIGRATION_FLAG_KEY;
+}
+
+export function hasLocalFamilyTreeData(): boolean {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  return Boolean(localStorage.getItem(STORAGE_KEY));
+}
+
+export function isFamilyTreeMigrationMarkedDone(): boolean {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  return localStorage.getItem(FAMILY_TREE_MIGRATION_FLAG_KEY) === "true";
+}
+
+export function markFamilyTreeMigrationDone(): void {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(FAMILY_TREE_MIGRATION_FLAG_KEY, "true");
+}
+
+export function clearFamilyTreeMigrationFlag(): void {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem(FAMILY_TREE_MIGRATION_FLAG_KEY);
+}
+
+export function hasMeaningfulFamilyTreeData(db: Database): boolean {
+  return db.persons.length > 0 || db.relationships.length > 0;
+}
+
+export function getLocalDatabaseSnapshot(): Database {
+  return loadDatabase();
+}
+
+export function replaceLocalDatabase(db: Database): void {
+  saveDatabase(db);
+}
 
 function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
