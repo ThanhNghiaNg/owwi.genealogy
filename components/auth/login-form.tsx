@@ -1,6 +1,6 @@
 "use client";
 
-import { LogIn } from "lucide-react";
+import { LogIn, ArrowRight } from "lucide-react";
 
 import { AuthFeedback } from "@/components/auth/auth-feedback";
 import { FormField } from "@/components/auth/form-field";
@@ -26,48 +26,52 @@ export function LoginForm({
   onSwitchToRegister: () => void;
 }) {
   return (
-    <form className="space-y-4" onSubmit={onSubmit}>
+    <form className="space-y-5" onSubmit={onSubmit}>
       <AuthFeedback state={state} />
 
-      <FormField label="Email" htmlFor="login-email">
-        <Input
-          id="login-email"
-          type="email"
-          autoComplete="email"
-          value={email}
-          onChange={(event) => onEmailChange(event.target.value)}
-          placeholder="you@example.com"
-          required
-        />
-      </FormField>
+      <div className="space-y-4">
+        <FormField label="Email" htmlFor="login-email">
+          <Input
+            id="login-email"
+            type="email"
+            autoComplete="email"
+            value={email}
+            onChange={(event) => onEmailChange(event.target.value)}
+            placeholder="name@example.com"
+            className="h-11"
+            required
+          />
+        </FormField>
 
-      <FormField label="Password" htmlFor="login-password">
-        <Input
-          id="login-password"
-          type="password"
-          autoComplete="current-password"
-          value={password}
-          onChange={(event) => onPasswordChange(event.target.value)}
-          placeholder="Your password"
-          required
-        />
-      </FormField>
+        <FormField label="Mật khẩu" htmlFor="login-password">
+          <Input
+            id="login-password"
+            type="password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(event) => onPasswordChange(event.target.value)}
+            placeholder="••••••••"
+            className="h-11"
+            required
+          />
+        </FormField>
+      </div>
 
-      <Button className="w-full" type="submit" disabled={state.loading}>
-        <LogIn className="size-4" />
-        {state.loading ? "Logging in..." : "Đăng nhập"}
+      <Button className="h-11 w-full text-base font-semibold" type="submit" disabled={state.loading}>
+        {state.loading ? "Đang xử lý..." : "Đăng nhập"}
+        <LogIn className="ml-2 size-4" />
       </Button>
 
-      <p className="text-center text-sm text-muted-foreground">
+      <div className="pt-2 text-center text-sm text-muted-foreground">
         Chưa có tài khoản?{" "}
         <button
           type="button"
-          className="font-medium text-foreground underline underline-offset-4"
+          className="font-semibold text-primary hover:underline underline-offset-4"
           onClick={onSwitchToRegister}
         >
           Đăng ký ngay
         </button>
-      </p>
+      </div>
     </form>
   );
 }

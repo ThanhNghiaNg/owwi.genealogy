@@ -1,16 +1,12 @@
-import Link from "next/link";
-
+import { AuthModal } from "@/components/auth/auth-modal";
 import { FamilyTreeApp } from "@/components/family-tree/family-tree-app";
-import { Button } from "@/components/ui/button";
 import "./family-tree.css";
 
 export default function Page() {
   return (
-    <div className="relative">
+    <div className="relative h-screen w-full overflow-hidden">
       <div className="absolute top-4 right-4 z-20">
-        <Button asChild variant="outline">
-          <Link href="/auth">Auth</Link>
-        </Button>
+        <AuthModal />
       </div>
       <FamilyTreeApp />
     </div>

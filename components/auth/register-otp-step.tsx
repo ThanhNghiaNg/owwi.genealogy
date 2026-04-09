@@ -1,12 +1,15 @@
 "use client";
 
-import { KeyRound, RotateCcw } from "lucide-react";
+import { ShieldCheck, RotateCcw } from "lucide-react";
 
 import { AuthFeedback } from "@/components/auth/auth-feedback";
-import { FormField } from "@/components/auth/form-field";
 import type { FormState } from "@/components/auth/types";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSlot,
+} from "@/components/ui/input-otp";
 
 export function RegisterOtpStep({
   email,
@@ -28,45 +31,59 @@ export function RegisterOtpStep({
   resendLoading: boolean;
 }) {
   return (
-    <form className="space-y-4" onSubmit={onSubmit}>
+    <form className="space-y-6" onSubmit={onSubmit}>
       <AuthFeedback state={state} />
 
-      <div className="rounded-lg border bg-muted/30 p-4 text-sm text-muted-foreground">
-        Mã OTP đã được gửi tới <span className="font-medium text-foreground">{email}</span>.
-        Nhập mã để hoàn tất đăng ký, sau đó hệ thống sẽ tự động đăng nhập cho bạn.
+      <div className="space-y-2 text-center text-sm">
+        <p className="text-muted-foreground">
+          Mã xác thực đã được gửi đến email:
+        </p>
+        <p className="font-semibold text-foreground">{email}</p>
       </div>
 
-      <FormField label="OTP code" htmlFor="register-otp-code">
-        <Input
-          id="register-otp-code"
-          type="text"
-          inputMode="numeric"
-          pattern="[0-9]{6}"
+      <div className="flex justify-center py-2">
+        <InputOTP
+          maxLength={6}
           value={otp}
-          onChange={(event) => onOtpChange(event.target.value)}
-          placeholder="6-digit code"
-          required
-        />
-      </FormField>
+          onChange={onOtpChange}
+          autoFocus
+        >
+          <InputOTPGroup className="gap-2">
+            <InputOTPSlot index={0} className="size-12 text-lg" />
+            <InputOTPSlot index={1} className="size-12 text-lg" />
+            <InputOTPSlot index={2} className="size-12 text-lg" />
+            <InputOTPSlot index={3} className="size-12 text-lg" />
+            <InputOTPSlot index={4} className="size-12 text-lg" />
+            <InputOTPSlot index={5} className="size-12 text-lg" />
+          </InputOTPGroup>
+        </InputOTP>
+      </div>
 
-      <div className="flex gap-3">
-        <Button className="flex-1" type="submit" disabled={state.loading}>
-          <KeyRound className="size-4" />
-          {state.loading ? "Verifying..." : "Xác minh & tạo tài khoản"}
+      <div className="space-y-3">
+        <Button className="h-11 w-full text-base font-semibold" type="submit" disabled={state.loading || otp.length < 6}>
+          <ShieldCheck className="mr-2 size-4" />
+          {state.loading ? "Đang xác minh..." : "Xác minh & Đăng ký"}
         </Button>
-        <Button type="button" variant="outline" onClick={onResend} disabled={resendLoading}>
-          <RotateCcw className="size-4" />
-          {resendLoading ? "Đang gửi..." : "Gửi lại mã"}
+        
+        <Button
+          type="button"
+          variant="ghost"
+          className="w-full text-sm"
+          onClick={onResend}
+          disabled={resendLoading}
+        >
+          <RotateCcw className="mr-2 size-4" />
+          {resendLoading ? "Đang gửi lại..." : "Gửi lại mã mới"}
         </Button>
       </div>
 
       <div className="text-center">
         <button
           type="button"
-          className="text-sm font-medium text-foreground underline underline-offset-4"
+          className="text-sm font-medium text-muted-foreground hover:text-foreground underline underline-offset-4"
           onClick={onBack}
         >
-          Quay lại để sửa thông tin
+          Quay lại sửa thông tin
         </button>
       </div>
     </form>
