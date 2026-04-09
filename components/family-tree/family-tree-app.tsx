@@ -1,8 +1,20 @@
 "use client";
 
-import { useReducer, useEffect, useState, useCallback } from "react";
-import { loadDatabase, type Database } from "@/lib/family-tree/database";
-import { familyTreeReducer, type Action, type AppState } from "@/lib/family-tree/reducer";
+import { useReducer, useEffect, useState, useCallback, useRef } from "react";
+import {
+  loadDatabase,
+  markFamilyTreeMigrationDone,
+  hasMeaningfulFamilyTreeData,
+  isFamilyTreeMigrationMarkedDone,
+  replaceLocalDatabase,
+} from "@/lib/family-tree/database";
+import {
+  fetchCurrentUser,
+  fetchServerFamilyTree,
+  migrateFamilyTreeToServer,
+  saveServerFamilyTree,
+} from "@/lib/family-tree/client";
+import { familyTreeReducer, type AppState } from "@/lib/family-tree/reducer";
 import { TreeCanvas } from "./tree-canvas";
 import { AddPersonDialog } from "./add-person-dialog";
 import { PersonForm } from "./person-form";
@@ -16,15 +28,79 @@ export function FamilyTreeApp() {
   const [state, dispatch] = useReducer(familyTreeReducer, EMPTY_STATE);
   const [mounted, setMounted] = useState(false);
   const [showInitDialog, setShowInitDialog] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const skipNextServerSyncRef = useRef(false);
 
   const { db, ui } = state;
 
-  // Load from localStorage on mount
   useEffect(() => {
-    const stored = loadDatabase();
-    dispatch({ type: "INIT", db: stored });
-    setMounted(true);
+    let cancelled = false;
+
+    async function initialize() {
+      const localDb = loadDatabase();
+      const auth = await fetchCurrentUser();
+
+      if (cancelled) {
+        return;
+      }
+
+      if (!auth?.userId) {
+        dispatch({ type: "INIT", db: localDb });
+        setIsAuthenticated(false);
+        setMounted(true);
+        return;
+      }
+
+      setIsAuthenticated(true);
+
+      const serverDb = await fetchServerFamilyTree();
+      if (cancelled) {
+        return;
+      }
+
+      if (hasMeaningfulFamilyTreeData(localDb) && !isFamilyTreeMigrationMarkedDone()) {
+        const migration = await migrateFamilyTreeToServer(localDb);
+        if (cancelled) {
+          return;
+        }
+
+        markFamilyTreeMigrationDone();
+        const nextDb = migration.familyTree ?? localDb;
+        replaceLocalDatabase(nextDb);
+        skipNextServerSyncRef.current = true;
+        dispatch({ type: "INIT", db: nextDb });
+        setMounted(true);
+        return;
+      }
+
+      const nextDb = serverDb ?? localDb;
+      replaceLocalDatabase(nextDb);
+      skipNextServerSyncRef.current = true;
+      dispatch({ type: "INIT", db: nextDb });
+      setMounted(true);
+    }
+
+    void initialize();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
+
+  useEffect(() => {
+    if (!mounted || !isAuthenticated) {
+      return;
+    }
+
+    if (skipNextServerSyncRef.current) {
+      skipNextServerSyncRef.current = false;
+      return;
+    }
+
+    void saveServerFamilyTree(db).catch(() => {
+      // Keep local state intact if server sync fails.
+    });
+  }, [db, mounted, isAuthenticated]);
 
   const handleAddRoot = useCallback(
     (name: string, gender: "male" | "female") => {
@@ -33,13 +109,6 @@ export function FamilyTreeApp() {
     },
     []
   );
-
-  const handleClearTree = useCallback(() => {
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("family-tree-db");
-    }
-    dispatch({ type: "INIT", db: { persons: [], relationships: [] } });
-  }, []);
 
   const handlePersonFormSubmit = useCallback(
     (
@@ -66,7 +135,6 @@ export function FamilyTreeApp() {
 
   const isEmpty = db.persons.length === 0;
 
-  // If the form is open and we're on the empty state (just added root), show form
   const editingPerson =
     ui.isFormOpen && ui.editingPersonId
       ? db.persons.find((p) => p.id === ui.editingPersonId) ?? null
@@ -81,21 +149,7 @@ export function FamilyTreeApp() {
           </svg>
           <h1>Phả hệ</h1>
         </div>
-        <div className="header-actions">
-          {!isEmpty && (
-            <>
-              {/* <button
-                className="header-btn"
-                onClick={() => setShowInitDialog(true)}
-              >
-                Add Root
-              </button> */}
-              {/* <button className="header-btn danger" onClick={handleClearTree}>
-                Clear All
-              </button> */}
-            </>
-          )}
-        </div>
+        <div className="header-actions" />
       </header>
 
       <main className="family-tree-main">
@@ -108,10 +162,7 @@ export function FamilyTreeApp() {
             </div>
             <h2>Start Your Family Tree</h2>
             <p>Add the first person to begin building your family tree.</p>
-            <button
-              className="btn-add-root"
-              onClick={() => setShowInitDialog(true)}
-            >
+            <button className="btn-add-root" onClick={() => setShowInitDialog(true)}>
               Add First Person
             </button>
           </div>
@@ -134,7 +185,6 @@ export function FamilyTreeApp() {
         />
       )}
 
-      {/* Show person form at app level if tree is empty (root just added) */}
       {isEmpty && ui.isFormOpen && editingPerson && (
         <PersonForm
           person={editingPerson}
