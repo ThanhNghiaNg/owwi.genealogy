@@ -1,7 +1,7 @@
 import { randomInt, randomUUID, scrypt as scryptCallback, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 
-import { type Collection, type Db, MongoServerError } from "mongodb";
+import { type Collection, type Db, MongoServerError, ObjectId } from "mongodb";
 import nodemailer from "nodemailer";
 import { z } from "zod";
 
@@ -15,6 +15,7 @@ import {
   type OtpPurpose,
   type UserDocument,
 } from "@/lib/db/schemas";
+import { getSessionTokenFromCookieHeader, verifySessionToken } from "@/lib/auth/session";
 import { getMongoClient } from "@/lib/mongodb";
 
 const scrypt = promisify(scryptCallback);
@@ -22,6 +23,11 @@ const OTP_TTL_MINUTES = 10;
 const OTP_DIGITS = 6;
 
 const ensuredCollections = new WeakSet<Db>();
+
+interface AuthenticatedRequestContext {
+  userId: string;
+  user: ReturnType<typeof sanitizeUser>;
+}
 
 export const registerSchema = z.object({
   email: z.string().trim().email(),
@@ -429,6 +435,34 @@ export async function verifyOtp(params: { email: string; otp: string; purpose: O
     verified: true,
     user: updatedUser ? sanitizeUser(updatedUser) : null,
     expiresAt: otpDoc.expiresAt,
+  };
+}
+
+export async function getAuthenticatedUserFromRequest(request: Request): Promise<AuthenticatedRequestContext> {
+  const userIdFromHeader = request.headers.get("x-auth-user-id");
+  let userId = userIdFromHeader;
+
+  if (!userId) {
+    const token = getSessionTokenFromCookieHeader(request.headers.get("cookie"));
+    const session = token ? verifySessionToken(token) : null;
+    userId = session?.sub ?? null;
+  }
+
+  if (!userId || !ObjectId.isValid(userId)) {
+    throw new HttpError(401, "Authentication required");
+  }
+
+  const db = await getAuthDb();
+  const users = getCollection(db, COLLECTIONS.users);
+  const user = await users.findOne({ _id: new ObjectId(userId) });
+
+  if (!user) {
+    throw new HttpError(401, "Authentication required");
+  }
+
+  return {
+    userId,
+    user: sanitizeUser(user),
   };
 }
 
