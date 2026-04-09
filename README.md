@@ -119,10 +119,16 @@ pnpm install
 
 ### Biến môi trường
 
-Tạo file `.env.local` với ít nhất biến sau:
+Tạo file `.env.local` với các biến sau:
 
 ```bash
 MONGODB_URI=mongodb://localhost:27017/owwi-genealogy
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_USER=your-smtp-user
+SMTP_PASS=your-smtp-password
+SMTP_FROM=no-reply@example.com
+SMTP_SECURE=false
 ```
 
 Hoặc copy nhanh từ file mẫu:
@@ -130,6 +136,18 @@ Hoặc copy nhanh từ file mẫu:
 ```bash
 cp .env.example .env.local
 ```
+
+Các biến SMTP được dùng để gửi OTP email cho endpoint `POST /api/auth/request-otp`.
+`SMTP_SECURE` nên đặt `true` khi dùng TLS implicit (thường là port `465`), còn `false` với STARTTLS/plain SMTP (thường là port `587`).
+
+### API auth hiện có
+
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+- `POST /api/auth/request-otp`
+- `POST /api/auth/verify-otp`
+
+Lưu ý: endpoint `request-otp` sẽ gửi OTP qua email và không trả mã OTP trong response.
 
 ### Chạy môi trường phát triển
 
@@ -197,7 +215,7 @@ Quan hệ chính:
 - `User` 1 - N `OTP`
 - `User` 1 - N `FamilyTree`
 
-Phần này mới chỉ là schema/data-contract và metadata cho index, chưa bao gồm auth flow, gửi email OTP, migration hay API CRUD.
+Phần backend hiện đã có auth flow cơ bản cho register/login/request OTP/verify OTP và hỗ trợ gửi OTP qua SMTP email. Tuy vậy, dự án vẫn chưa bao gồm migration chuyên biệt hoặc API CRUD hoàn chỉnh cho FamilyTree.
 
 ## Định hướng production
 
