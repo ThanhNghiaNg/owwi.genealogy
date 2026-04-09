@@ -12,10 +12,9 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         ok: true,
-        message: "OTP generated successfully",
+        message: "OTP sent successfully",
         purpose: otp.purpose,
         expiresAt: otp.expiresAt,
-        otpCode: otp.otpCode,
       },
       { status: 200 },
     );
